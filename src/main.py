@@ -1,8 +1,8 @@
 import sys
 import peer
-import bencode
 
 from pathlib import Path
+from torrent import Torrent
 
 
 def main() -> None:
@@ -11,25 +11,19 @@ def main() -> None:
 
 
     filepath = Path(sys.argv[1])
-
-    if not filepath.is_file():
-        error(f"The path '{filepath}' does not point to a file")
-
-    if filepath.suffix != ".torrent":
-        error(f"The file '{filepath}' is not a .torrent")
-
-
     out_dir = Path(sys.argv[2]) if len(sys.argv) >= 3 else Path('.')
 
     if not out_dir.is_dir():
         error(f"The path '{out_dir}' does not point to a directory")
 
 
-    with filepath.open("rb") as file:
-        encoded = file.read()
-        decoded = bencode.decode(encoded)
+    torrent = Torrent.from_filepath(filepath)
 
-        print(encoded == bencode.encode(decoded))
+    print(torrent.name)
+    print(torrent.length)
+    print(torrent.piece_len)
+    print(torrent.info_hash)
+    print(torrent.announce_list)
 
 
 def error(message: str, code = 1):
