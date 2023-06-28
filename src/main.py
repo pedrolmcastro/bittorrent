@@ -1,4 +1,5 @@
 import sys
+import peer
 import bencode
 import pathlib
 
@@ -26,6 +27,8 @@ def main() -> None:
     with filepath.open("rb") as file:
         decoded = bencode.decode(file.read())
         print(decoded[b"info"][b"name"])
+
+        print(peer.gen_id())
 
 
 def error(message: str, code = 1):
