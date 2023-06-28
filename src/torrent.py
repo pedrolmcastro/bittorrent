@@ -15,8 +15,8 @@ class Torrent:
     announce_list: list[str]
 
 
-    @staticmethod
-    def from_bencoded(encoded: bytes) -> "Torrent":
+    @classmethod
+    def from_bencoded(cls, encoded: bytes) -> "Torrent":
         decoded = bencode.decode(encoded)
         assert isinstance(decoded, dict)
 
@@ -32,11 +32,11 @@ class Torrent:
         assert type(info[b"length"]) is int
         assert type(info[b"piece length"]) is int
 
-        return Torrent(
+        return cls(
             name = name.decode(),
             length = info[b"length"],
             piece_len = info[b"piece length"],
-            announce_list = _get_announce_list(decoded),
+            announce_list = _announce_list(decoded),
             info_hash = hashlib.sha1(bencode.encode(info)).digest(),
             pieces = [pieces[i:i + 20] for i in range(0, len(pieces), 20)],
         )
@@ -65,7 +65,7 @@ def _flatten(lst: list) -> list:
     return flatten
 
 
-def _get_announce_list(decoded: dict[bytes, bencode.Data]) -> list[str]:
+def _announce_list(decoded: dict[bytes, bencode.Data]) -> list[str]:
     if b"announce-list" in decoded:
         assert isinstance(decoded[b"announce-list"], list)
         return [announce.decode() for announce in _flatten(decoded[b"announce-list"])]
