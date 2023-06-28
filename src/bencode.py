@@ -20,7 +20,7 @@ def encode(data: Data) -> bytes:
         return b'd' + b''.join(encode(key) + encode(value) for key, value in data.items()) + b'e'
 
     else:
-        raise ValueError("Invalid bencode data")
+        raise TypeError("Invalid bencode data")
 
 
 def _int_to_bytes(num: int) -> bytes:
