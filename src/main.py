@@ -1,5 +1,6 @@
 import sys
 import peer
+import tracker
 
 from pathlib import Path
 from torrent import Torrent
@@ -18,12 +19,7 @@ def main() -> None:
 
 
     torrent = Torrent.from_filepath(filepath)
-
-    print(torrent.name)
-    print(torrent.length)
-    print(torrent.piece_len)
-    print(torrent.info_hash)
-    print(torrent.announce_list)
+    print(tracker.request(torrent, peer.gen_id(), 6889))
 
 
 def error(message: str, code = 1):
