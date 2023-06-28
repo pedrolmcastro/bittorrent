@@ -6,6 +6,28 @@ import re
 Data = int | bytes | list["Data"] | dict[bytes, "Data"]
 
 
+def encode(data: Data) -> bytes:
+    if type(data) is int:
+        return b'i' + _int_to_bytes(data) + b'e'
+
+    elif type(data) is bytes:
+        return _int_to_bytes(len(data)) + b':' + data
+
+    elif isinstance(data, list):
+        return b'l' + b''.join(encode(element) for element in data) + b'e'
+
+    elif isinstance(data, dict):
+        return b'd' + b''.join(encode(key) + encode(value) for key, value in data.items()) + b'e'
+
+    else:
+        raise ValueError("Invalid bencode data")
+
+
+def _int_to_bytes(num: int) -> bytes:
+    return str(num).encode(encoding = "ascii")
+
+
+
 def decode(encoded: bytes) -> Data:
     decoded, rest = _decode_partial(encoded)
 
