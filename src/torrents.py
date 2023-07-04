@@ -1,6 +1,7 @@
 import bencode
 import hashlib
 
+from piece import Piece
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -11,7 +12,7 @@ class Torrent:
     length: int
     piece_len: int
     info_hash: bytes
-    pieces: list[bytes]
+    pieces: list[Piece]
     announce_list: list[str]
 
 
@@ -26,19 +27,23 @@ class Torrent:
         name = info[b"name"]
         assert type(name) is bytes
 
-        pieces = info[b"pieces"]
-        assert type(pieces) is bytes and len(pieces) % 20 == 0
+        length = info[b"length"]
+        assert type(length) is int
 
-        assert type(info[b"length"]) is int
-        assert type(info[b"piece length"]) is int
+        piece_len = info[b"piece length"]
+        assert type(piece_len) is int
+
+        pieces = info[b"pieces"]
+        assert type(pieces) is bytes
+
 
         return cls(
+            length = length,
             name = name.decode(),
-            length = info[b"length"],
-            piece_len = info[b"piece length"],
+            piece_len = piece_len,
             announce_list = _announce_list(decoded),
+            pieces = _pieces(pieces, piece_len, length),
             info_hash = hashlib.sha1(bencode.encode(info)).digest(),
-            pieces = [pieces[i:i + 20] for i in range(0, len(pieces), 20)],
         )
 
     @classmethod
@@ -76,3 +81,13 @@ def _announce_list(decoded: dict[bytes, bencode.Data]) -> list[str]:
 
     else:
         raise ValueError("The bdecoded data does not contain 'announce-list' nor 'announce'")
+
+
+def _pieces(blob: bytes, piece_len: int, total_len: int) -> list[Piece]:
+    if len(blob) % 20 != 0:
+        raise ValueError("The pices info blob must have a multiple of 20 length")
+
+    pieces = [Piece(index = i // 20, hash = blob[i:i + 20], length = piece_len) for i in range(0, len(blob), 20)]
+    pieces[-1].length = total_len - (len(pieces) - 1) * piece_len
+
+    return pieces

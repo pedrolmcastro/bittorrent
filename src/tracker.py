@@ -1,11 +1,10 @@
-import logging
+import bencode
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
 
-import bencode
 from peer import Peer
-from torrent import Torrent
+from torrents import Torrent
+from dataclasses import dataclass
 
 
 @dataclass
@@ -45,18 +44,17 @@ class Response:
 
 
 
-def request(torrent: Torrent, peer_id: bytes, port: int, uploaded = 0, downloaded = 0, compact = True):
+def request(torrent: Torrent, peer_id: bytes, port: int, uploaded = 0, downloaded = 0, compact = True) -> Response:
     url = _request_url(torrent, peer_id, port, uploaded, downloaded, compact)
-    logging.debug(f"tracker url '{url}'")
 
     with urllib.request.urlopen(url) as response:
         if response.status == 200:
             return Response.from_bencode(response.read())
         else:
-            raise IOError(f"Request failed with status {response.status}")
+            raise Exception(f"Request failed with status {response.status}")
 
 
-def _request_url(torrent: Torrent, peer_id: bytes, port: int, uploaded: int, downloaded: int, compact: bool):
+def _request_url(torrent: Torrent, peer_id: bytes, port: int, uploaded: int, downloaded: int, compact: bool) -> str:
     if port < 0 or port > 65535:
         raise ValueError("Invalid port number")
 

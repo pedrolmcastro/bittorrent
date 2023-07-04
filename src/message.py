@@ -2,7 +2,8 @@ import struct
 from enum import Enum
 from dataclasses import dataclass
 
-class MessageId(Enum):
+
+class Id(Enum):
     CHOKE = 0
     UNCHOKE = 1
     INTERESTED = 2
@@ -16,50 +17,35 @@ class MessageId(Enum):
     HASH_REQUEST = 21
     HASHES = 22
     HASH_REJECT = 23
+    KEEP_ALIVE = None
 
-    @classmethod
-    def from_bytes(cls, encoded: int) -> "MessageId":
-        match encoded:
-            case MessageId.CHOKE.value:
-                return MessageId.CHOKE
-            case MessageId.UNCHOKE.value:
-                return MessageId.UNCHOKE
-            case MessageId.INTERESTED.value:
-                return MessageId.INTERESTED
-            case MessageId.NOT_INTERESTED.value:
-                return MessageId.NOT_INTERESTED
-            case MessageId.HAVE.value:
-                return MessageId.HAVE
-            case MessageId.BITFIELD.value:
-                return MessageId.BITFIELD
-            case MessageId.REQUEST.value:
-                return MessageId.REQUEST
-            case MessageId.PIECE.value:
-                return MessageId.PIECE
-            case MessageId.CANCEL.value:
-                return MessageId.CANCEL
-            case MessageId.REJECT.value:
-                return MessageId.REJECT
-            case MessageId.HASH_REQUEST.value:
-                return MessageId.HASH_REQUEST
-            case MessageId.HASHES.value:
-                return MessageId.HASHES
-            case MessageId.HASH_REJECT.value:
-                return MessageId.HASH_REJECT
 
 @dataclass
 class Message:
-    id: MessageId
+    id: Id
     payload: bytes
+
 
     @classmethod
     def request(cls, index: int, begin: int, length: int) -> "Message":
-        return cls(MessageId.REQUEST, struct.pack(">III", index, begin, length))
+        return cls(Id.REQUEST, struct.pack(">III", index, begin, length))
 
     @classmethod
-    def from_bytes(cls, encoded: bytes) -> "Message":
-        return cls(MessageId.from_bytes(encoded[0]), encoded[1:])
+    def keep_alive(cls) -> "Message":
+        return cls(id = Id.KEEP_ALIVE, payload = bytes())
+
+    @classmethod
+    def unchoke(cls) -> "Message":
+        return cls(id = Id.UNCHOKE, payload = bytes())
+
+    @classmethod
+    def intrested(cls) -> "Message":
+        return cls(id = Id.INTERESTED, payload = bytes())
+
+
+    @classmethod
+    def from_bytes(cls, blob: bytes) -> "Message":
+        return cls(id = Id(blob[0]), payload = blob[1:])
 
     def to_bytes(self) -> bytes:
-        return bytes([self.id.value]) + self.payload
-
+        return struct.pack(">IB", len(self.payload) + 1, self.id.value) + self.payload
